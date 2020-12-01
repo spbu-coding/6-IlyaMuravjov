@@ -7,7 +7,12 @@
 typedef int (*comparator_func_t)(const char*, const char*);
 typedef char** strings_array_t;
 typedef size_t array_size_t;
+typedef void (*str_sort_func_t)(strings_array_t, array_size_t, comparator_func_t);
 
+int get_sorting_exit_code();
+
+int cmp_string_ascending(const char *s1, const char *s2);
+int cmp_string_descending(const char *s1, const char *s2);
 
 void bubble(strings_array_t, array_size_t, comparator_func_t);
 
