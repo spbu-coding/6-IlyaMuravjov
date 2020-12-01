@@ -70,7 +70,7 @@ void merge(strings_array_t arr, array_size_t arr_length, comparator_func_t compa
     sorting_exit_code = 0;
     char **work_space = logging_malloc(arr_length * sizeof(char *), "merge sorting work space");
     if (work_space == NULL) {
-        sorting_exit_code = 1;
+        sorting_exit_code = -1;
         return;
     }
     recursive_merge_sort(arr, arr_length, comparator, work_space);
@@ -121,7 +121,7 @@ void radix(strings_array_t arr, array_size_t arr_length, comparator_func_t compa
     sorting_exit_code = 0;
     MEASURED_STRING *strings = logging_malloc(arr_length * sizeof(MEASURED_STRING), "string lengths cache");
     if (strings == NULL) {
-        sorting_exit_code = 1;
+        sorting_exit_code = -1;
         return;
     }
     size_t max_str_length = 0;
@@ -137,7 +137,7 @@ void radix(strings_array_t arr, array_size_t arr_length, comparator_func_t compa
         if (buckets[i] == NULL) {
             free_string_buckets(buckets, i);
             free(strings);
-            sorting_exit_code = 1;
+            sorting_exit_code = -1;
             return;
         }
         alphabet[i][0] = i;

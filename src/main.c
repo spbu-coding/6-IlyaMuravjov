@@ -47,11 +47,11 @@ char **read_str_arr(char *filepath, size_t arr_length) {
 
 int write_str_arr(char *filepath, char **arr, size_t arr_length) {
     FILE *file = logging_fopen(filepath, "w");
-    if (file == NULL) return 1;
+    if (file == NULL) return -1;
     for (size_t i = 0; i < arr_length; i++) {
         if (logging_fputs(arr[i], file, "input string") == EOF) {
             fclose(file);
-            return 1;
+            return -1;
         }
     }
     fclose(file);
@@ -63,11 +63,11 @@ int str_to_arr_length(const char *str, array_size_t *result) {
     uintmax_t result_umax = strtoumax(str, &endptr, 0);
     if (endptr < str + strlen(str)) {
         LOG_ERROR("Invalid array length. \"%s\" is not a valid number\n", str);
-        return 1;
+        return -1;
     }
     if (result_umax == UINTMAX_MAX || result_umax > SIZE_MAX) {
         LOG_ERROR("Invalid array length. %s is too large\n", str);
-        return 1;
+        return -1;
     }
     *result = result_umax;
     return 0;
@@ -94,20 +94,20 @@ int main(int argc, char *argv[]) {
     if (argc != EXPECTED_ARG_COUNT) {
         LOG_ERROR("Invalid number of arguments. Expected %d arg(s), but found %d arg(s)\n", EXPECTED_ARG_COUNT - 1, argc - 1);
         LOG_ERROR("Usage: strings_comparer <line count> <input file> <output file> <sorting algorithm> <comparator>\n");
-        return 1;
+        return -1;
     }
     array_size_t arr_length;
-    if (str_to_arr_length(argv[ARR_LENGTH_ARG_INDEX], &arr_length) != 0) return 1;
+    if (str_to_arr_length(argv[ARR_LENGTH_ARG_INDEX], &arr_length) != 0) return -1;
     str_sort_func_t sort_func = get_str_sort_func_by_name(argv[SORT_ALGORITHM_NAME_ARG_INDEX]);
-    if (sort_func == NULL) return 1;
+    if (sort_func == NULL) return -1;
     comparator_func_t comparator = get_str_comparator_by_name(argv[COMPARATOR_NAME_ARG_INDEX]);
-    if (comparator == NULL) return 1;
+    if (comparator == NULL) return -1;
     char **arr = read_str_arr(argv[INPUT_FILE_ARG_INDEX], arr_length);
-    if (arr == NULL) return 1;
+    if (arr == NULL) return -1;
     sort_func(arr, arr_length, comparator);
     if (get_sorting_exit_code() != 0) {
         free_str_arr(arr, arr_length);
-        return 1;
+        return -1;
     }
     int response = write_str_arr(argv[OUTPUT_FILE_ARG_INDEX], arr, arr_length);
     free_str_arr(arr, arr_length);
