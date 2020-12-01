@@ -5,8 +5,6 @@
 #include "sortings.h"
 #include "logging_std_wrappers.h"
 
-#define ARR_LENGTH(arr) (sizeof(arr) / sizeof(arr[0]))
-
 static const size_t MAX_INPUT_STRING_SIZE_WITH_SPECIAL_CHARS = MAX_INPUT_STRING_SIZE + 3; // including \r, \n, and \0
 
 static const int EXPECTED_ARG_COUNT = 1 + 5;
@@ -16,49 +14,11 @@ static const int OUTPUT_FILE_ARG_INDEX = 3;
 static const int SORT_ALGORITHM_NAME_ARG_INDEX = 4;
 static const int COMPARATOR_NAME_ARG_INDEX = 5;
 
-typedef struct {
-    char *name;
-    void *ptr;
-} NAMED_PTR;
-
-void *get_ptr_by_name(const char *name, NAMED_PTR *named_ptrs, size_t named_ptr_count) {
-    for (size_t i = 0; i < named_ptr_count; i++)
-        if (strcmp(name, named_ptrs[i].name) == 0)
-            return named_ptrs[i].ptr;
-    return NULL;
-}
-
-void *logging_get_ptr_by_name(const char *name, NAMED_PTR *named_ptrs, size_t named_ptr_count, char *variable_name) {
-    void *result = get_ptr_by_name(name, named_ptrs, named_ptr_count);
-    if (result == NULL) {
-        LOG_ERROR("Invalid %s. Expected one of the following: ", variable_name);
-        for (size_t i = 0; i < named_ptr_count - 1; i++)
-            LOG_ERROR("\"%s\", ", named_ptrs[i].name);
-        if (named_ptr_count > 0) LOG_ERROR("\"%s\"", named_ptrs[named_ptr_count - 1].name);
-        LOG_ERROR(". Found: \"%s\"\n", name);
-        return NULL;
-    }
-    return result;
-}
-
 void free_str_arr(char **arr, size_t arr_length) {
     for (size_t i = 0; i < arr_length; i++)
         free(arr[i]);
     free(arr);
 }
-
-NAMED_PTR str_sort_funcs[] = {
-        {"bubble",    bubble},
-        {"insertion", insertion},
-        {"merge",     merge},
-        {"quick",     quick},
-        {"radix",     radix}
-};
-
-NAMED_PTR comparator_funcs[] = {
-        {"asc", cmp_string_ascending},
-        {"des", cmp_string_descending}
-};
 
 char **read_str_arr(char *filepath, size_t arr_length) {
     FILE *file = logging_fopen(filepath, "r");
@@ -113,18 +73,34 @@ int str_to_arr_length(const char *str, array_size_t *result) {
     return 0;
 }
 
+str_sort_func_t get_str_sort_func_by_name(char *name) {
+    if (strcmp(name, "bubble") == 0) return bubble;
+    else if (strcmp(name, "insertion") == 0) return insertion;
+    else if (strcmp(name, "merge") == 0) return merge;
+    else if (strcmp(name, "quick") == 0) return quick;
+    else if (strcmp(name, "radix") == 0) return radix;
+    LOG_ERROR("Unknown sorting algorithm. Expected \"bubble\", \"insertion\", \"merge\", \"quick\", or \"radix\", but found: \"%s\"\n", name);
+    return NULL;
+}
+
+comparator_func_t get_str_comparator_by_name(char *name) {
+    if (strcmp(name, "asc") == 0) return cmp_string_ascending;
+    else if (strcmp(name, "des") == 0) return cmp_string_descending;
+    LOG_ERROR("Unknown comparator. Expected either \"asc\" or \"des\", but found: \"%s\"\n", name);
+    return NULL;
+}
+
 int main(int argc, char *argv[]) {
     if (argc != EXPECTED_ARG_COUNT) {
         LOG_ERROR("Invalid number of arguments. Expected %d arg(s), but found %d arg(s)\n", EXPECTED_ARG_COUNT - 1, argc - 1);
+        LOG_ERROR("Usage: strings_comparer <line count> <input file> <output file> <sorting algorithm> <comparator>\n");
         return 1;
     }
     array_size_t arr_length;
     if (str_to_arr_length(argv[ARR_LENGTH_ARG_INDEX], &arr_length) != 0) return 1;
-    str_sort_func_t sort_func = logging_get_ptr_by_name(argv[SORT_ALGORITHM_NAME_ARG_INDEX], str_sort_funcs,
-                                                        ARR_LENGTH(str_sort_funcs), "sorting algorithm");
+    str_sort_func_t sort_func = get_str_sort_func_by_name(argv[SORT_ALGORITHM_NAME_ARG_INDEX]);
     if (sort_func == NULL) return 1;
-    comparator_func_t comparator = logging_get_ptr_by_name(argv[COMPARATOR_NAME_ARG_INDEX], comparator_funcs,
-                                                           ARR_LENGTH(comparator_funcs), "comparator");
+    comparator_func_t comparator = get_str_comparator_by_name(argv[COMPARATOR_NAME_ARG_INDEX]);
     if (comparator == NULL) return 1;
     char **arr = read_str_arr(argv[INPUT_FILE_ARG_INDEX], arr_length);
     if (arr == NULL) return 1;
