@@ -103,21 +103,40 @@ void quick(strings_array_t arr, array_size_t arr_length, comparator_func_t compa
     recursive_quick_sort(arr, arr + arr_length - 1, comparator);
 }
 
-void free_string_buckets(char **buckets[], size_t bucket_count) {
+typedef struct {
+    char *chars;
+    size_t length;
+} MEASURED_STRING;
+
+MEASURED_STRING new_measured_string(char *chars) {
+    return (MEASURED_STRING) {chars, strlen(chars)};
+}
+
+void free_string_buckets(MEASURED_STRING *buckets[], size_t bucket_count) {
     for (size_t i = 0; i < bucket_count; i++)
         free(buckets[i]);
 }
 
 void radix(strings_array_t arr, array_size_t arr_length, comparator_func_t comparator) {
     sorting_exit_code = 0;
+    MEASURED_STRING *strings = logging_malloc(arr_length * sizeof(MEASURED_STRING), "string lengths cache");
+    if (strings == NULL) {
+        sorting_exit_code = 1;
+        return;
+    }
+    size_t max_str_length = 0;
+    for (array_size_t i = 0; i < arr_length; i++)
+        if ((strings[i] = new_measured_string(arr[i])).length > max_str_length)
+            max_str_length = strings[i].length;
     static const size_t ALPHABET_LENGTH = UCHAR_MAX + 1;
     char alphabet[ALPHABET_LENGTH][2];
-    char **buckets[ALPHABET_LENGTH];
+    MEASURED_STRING *buckets[ALPHABET_LENGTH];
     array_size_t bucket_sizes[ALPHABET_LENGTH];
     for (size_t i = 0; i < ALPHABET_LENGTH; i++) {
-        buckets[i] = logging_malloc(arr_length * sizeof(char **), "radix sorting bucket");
+        buckets[i] = logging_malloc(arr_length * sizeof(MEASURED_STRING), "radix sorting bucket");
         if (buckets[i] == NULL) {
             free_string_buckets(buckets, i);
+            free(strings);
             sorting_exit_code = 1;
             return;
         }
@@ -125,18 +144,22 @@ void radix(strings_array_t arr, array_size_t arr_length, comparator_func_t compa
         alphabet[i][1] = '\0';
     }
     qsort(alphabet, ALPHABET_LENGTH, sizeof(alphabet[0]), (__compar_fn_t) comparator);
-    for (size_t char_index = MAX_INPUT_STRING_SIZE - 1; char_index < SIZE_MAX; char_index--) {
+    for (size_t char_index = max_str_length - 1; char_index < SIZE_MAX; char_index--) {
         memset(bucket_sizes, 0, ALPHABET_LENGTH * sizeof(array_size_t));
         for (array_size_t str_index = 0; str_index < arr_length; str_index++) {
-            unsigned char bucket_index = arr[str_index][char_index];
-            buckets[bucket_index][bucket_sizes[bucket_index]++] = arr[str_index];
+            MEASURED_STRING string = strings[str_index];
+            unsigned char bucket_index = char_index < string.length ? string.chars[char_index] : 0;
+            buckets[bucket_index][bucket_sizes[bucket_index]++] = string;
         }
         array_size_t str_index = 0;
         for (size_t i = 0; i < ALPHABET_LENGTH; i++) {
             unsigned char bucket_index = alphabet[i][0];
             for (array_size_t j = 0; j < bucket_sizes[bucket_index]; j++)
-                arr[str_index++] = buckets[bucket_index][j];
+                strings[str_index++] = buckets[bucket_index][j];
         }
     }
     free_string_buckets(buckets, ALPHABET_LENGTH);
+    for (array_size_t i = 0; i < arr_length; i++)
+        arr[i] = strings[i].chars;
+    free(strings);
 }
