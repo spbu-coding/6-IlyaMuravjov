@@ -23,8 +23,8 @@ void free_str_arr(char **arr, size_t arr_length) {
 char **read_str_arr(char *filepath, size_t arr_length) {
     FILE *file = logging_fopen(filepath, "r");
     if (file == NULL) return NULL;
-    char **arr = logging_malloc(arr_length * sizeof(char *), "string array");
-    if (arr == NULL) {
+    char **arr = NULL;
+    if (arr_length != 0 && (arr = logging_malloc(arr_length * sizeof(char *), "string array")) == NULL) {
         fclose(file);
         return NULL;
     }
@@ -54,6 +54,11 @@ int write_str_arr(char *filepath, char **arr, size_t arr_length) {
             return -1;
         }
     }
+    if (arr_length == 0)
+        if (logging_fputs("\n", file, "terminating end of the line") == EOF) {
+            fclose(file);
+            return -1;
+        }
     fclose(file);
     return 0;
 }
@@ -103,7 +108,7 @@ int main(int argc, char *argv[]) {
     comparator_func_t comparator = get_str_comparator_by_name(argv[COMPARATOR_NAME_ARG_INDEX]);
     if (comparator == NULL) return -1;
     char **arr = read_str_arr(argv[INPUT_FILE_ARG_INDEX], arr_length);
-    if (arr == NULL) return -1;
+    if (arr_length != 0 && arr == NULL) return -1;
     sort_func(arr, arr_length, comparator);
     if (get_sorting_exit_code() != 0) {
         free_str_arr(arr, arr_length);

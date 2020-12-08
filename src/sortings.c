@@ -30,6 +30,7 @@ void swap_strings_in_arr(char **arr, array_size_t i, array_size_t j) {
 
 void bubble(strings_array_t arr, array_size_t arr_length, comparator_func_t comparator) {
     sorting_exit_code = 0;
+    if (arr_length <= 1) return;
     for (array_size_t i = 0; i < arr_length; i++)
         for (array_size_t j = 0; j < arr_length - i - 1; j++)
             if (comparator(arr[j], arr[j + 1]) > 0)
@@ -38,6 +39,7 @@ void bubble(strings_array_t arr, array_size_t arr_length, comparator_func_t comp
 
 void insertion(strings_array_t arr, array_size_t arr_length, comparator_func_t comparator) {
     sorting_exit_code = 0;
+    if (arr_length <= 1) return;
     for (array_size_t i = 1; i < arr_length; i++) {
         char *cur = arr[i];
         array_size_t j;
@@ -68,6 +70,7 @@ void recursive_merge_sort(strings_array_t arr, array_size_t arr_length, comparat
 
 void merge(strings_array_t arr, array_size_t arr_length, comparator_func_t comparator) {
     sorting_exit_code = 0;
+    if (arr_length <= 1) return;
     char **work_space = logging_malloc(arr_length * sizeof(char *), "merge sorting work space");
     if (work_space == NULL) {
         sorting_exit_code = -1;
@@ -99,6 +102,7 @@ void recursive_quick_sort(char **first, char **last, comparator_func_t comparato
 
 void quick(strings_array_t arr, array_size_t arr_length, comparator_func_t comparator) {
     sorting_exit_code = 0;
+    if (arr_length <= 1) return;
     shuffle_string_arr(arr, arr_length);
     recursive_quick_sort(arr, arr + arr_length - 1, comparator);
 }
@@ -119,6 +123,7 @@ void free_string_buckets(MEASURED_STRING *buckets[], size_t bucket_count) {
 
 void radix(strings_array_t arr, array_size_t arr_length, comparator_func_t comparator) {
     sorting_exit_code = 0;
+    if (arr_length <= 1) return;
     MEASURED_STRING *strings = logging_malloc(arr_length * sizeof(MEASURED_STRING), "string lengths cache");
     if (strings == NULL) {
         sorting_exit_code = -1;
